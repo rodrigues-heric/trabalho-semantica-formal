@@ -1,0 +1,4 @@
+(executable
+ (public_name trabalhofinal)
+ (name main)
+ (libraries trabalhofinal))
