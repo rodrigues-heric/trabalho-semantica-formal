@@ -1,6 +1,10 @@
 (** Branch de estudos de OCaml *)
 
 (*
+  https://ocaml.org/exercises?difficulty_level=beginner   
+*)
+
+(*
   Comandos úteis
   - dune build __nomeprojeto__ -> compila o projeto
   - dune exec __nomeprojeto__ -> executa o projeto compilado
@@ -12,6 +16,7 @@
    - Uma lista sempre é uma lista encadeada do tipo (elemento [resto da lista])
    - O identificador _ é o default no loop (switch ... case ... default)
    - O operador :: é uma das opções de lista ([_, tail] == _ :: tail)
+   - O operador @ é utilizado para concatenar listas
    - O separador de uma lista é ; e não ,
 *)
 
@@ -48,3 +53,11 @@ let rec list_length : 'a list -> int = function
 ;;
 
 list_length [ "a"; "b"; "c" ]
+
+(** Reverse a list *)
+let rec list_reverse : 'a list -> 'b list = function
+  | [] -> []
+  | x :: tail -> list_reverse tail @ [ x ]
+;;
+
+list_reverse [ "a"; "b"; "c" ]
