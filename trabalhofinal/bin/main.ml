@@ -68,3 +68,11 @@ let is_palindrome (list_to_check : 'a list) : bool =
 ;;
 
 is_palindrome [ "o"; "v"; "o" ]
+
+(** Duplicate the elements of a list *)
+let rec double_list_elements : 'a list -> 'b list = function
+  | [] -> []
+  | head :: tail -> head :: head :: double_list_elements tail
+;;
+
+double_list_elements [ ("a", "b") ]
