@@ -61,3 +61,10 @@ let rec list_reverse : 'a list -> 'b list = function
 ;;
 
 list_reverse [ "a"; "b"; "c" ]
+
+(** Palindrome *)
+let is_palindrome (list_to_check : 'a list) : bool =
+  list_to_check = list_reverse list_to_check
+;;
+
+is_palindrome [ "o"; "v"; "o" ]
