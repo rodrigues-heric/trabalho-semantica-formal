@@ -31,3 +31,11 @@ let rec last_two : 'a list -> ('a * 'a) option = function
 ;;
 
 last_two [ ("a", "b", "c", "d", "e") ]
+
+(** N'th element of a list *)
+let rec nth_element k = function
+  | [] -> None
+  | head :: tail -> if k = 0 then Some head else nth_element (k - 1) tail
+;;
+
+nth_element 2 [ ("a", "b", "c") ]
