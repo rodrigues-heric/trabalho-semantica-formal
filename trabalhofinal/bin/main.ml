@@ -12,16 +12,17 @@
    - Uma lista sempre é uma lista encadeada do tipo (elemento [resto da lista])
    - O identificador _ é o default no loop (switch ... case ... default)
    - O operador :: é uma das opções de lista ([_, tail] == _ :: tail)
+   - O separador de uma lista é ; e não ,
 *)
 
-(** Write a function last : 'a list -> 'a option that returns the last element of a list *)
+(** Tail of list *)
 let rec last : 'a list -> 'a option = function
   | [] -> None
   | [ x ] -> Some x
   | _ :: tail -> last tail
 ;;
 
-last [ ("a", "b", "c") ]
+last [ "a"; "b"; "c" ]
 
 (** Last two elements of a list *)
 let rec last_two : 'a list -> ('a * 'a) option = function
@@ -30,7 +31,7 @@ let rec last_two : 'a list -> ('a * 'a) option = function
   | _ :: tail -> last_two tail
 ;;
 
-last_two [ ("a", "b", "c", "d", "e") ]
+last_two [ "a"; "b"; "c"; "d"; "e" ]
 
 (** N'th element of a list *)
 let rec nth_element k = function
@@ -38,4 +39,12 @@ let rec nth_element k = function
   | head :: tail -> if k = 0 then Some head else nth_element (k - 1) tail
 ;;
 
-nth_element 2 [ ("a", "b", "c") ]
+nth_element 2 [ "a"; "b"; "c" ]
+
+(** Length of a list *)
+let rec list_length : 'a list -> int = function
+  | [] -> 0
+  | _ :: tail -> 1 + list_length tail
+;;
+
+list_length [ "a"; "b"; "c" ]
