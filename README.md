@@ -10,6 +10,10 @@ Branch dedicado ao desenvolimento do trabalho e documentação necessária para 
 
 Branch contendo o estudo da linguagem L0. A linguagem L0 é uma das estudadas na disciplina para o ensino de interpretadores. Neste branch também se encontra o interpretador da linguagem desenvolvido em aula.
 
+## 📑 SSM0 Compiler
+
+Branch contendo o estudo da linguagem SSM0. O compilador para a Simple Stack Machine L0 foi construído em aula.
+
 ## 📝 Exercises 
 
 Branch criado para o estudo da linguagem de programação OCaml e resolução de exercícios propostos pela própria organização. 
