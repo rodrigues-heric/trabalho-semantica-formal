@@ -99,6 +99,107 @@ let rec l1_type_infer (env : environment) (e : expression) : l1_type =
       else raise (L1TypeError "Tipo da expressão não é o esperado")
   | _ -> raise (L1TypeError "Expressão não implementada. Erro no parser.")
 
+(** Avaliador Big-Step com substituição de L1 *)
+let replace (v : expression) (x : identifier) (e : expression) : expression =
+  let rec rp (e : expression) : expression =
+    match e with
+    | Num _ -> e
+    | True -> e
+    | False -> e
+    | BiOperator (operator, e1, e2) -> BiOperator (operator, rp e1, rp e2)
+    | App (e1, e2) -> App (rp e1, rp e2)
+    | Pair (e1, e2) -> Pair (rp e1, rp e2)
+    | First e1 -> First (rp e1)
+    | Second e1 -> Second (rp e1)
+    | If (e1, e2, e3) -> If (rp e1, rp e2, rp e3)
+    | Var y -> if x = y then v else e
+    | Func (y, t, e1) -> if x = y then e else Func (y, t, rp e1)
+    | Let (y, t, e1, e2) -> Let (y, t, rp e1, rp e2)
+    | LetRec (f, tf, ef, e2) -> if x = f then e else LetRec (f, tf, rp ef, rp e2)
+  in
+  rp e
+
+(** Avaliação em L1 *)
+let compute (operator : operator) (v1 : expression) (v2 : expression) =
+  match (operator, v1, v2) with
+  | Sum, Num n1, Num n2 -> Num (n1 + n2)
+  | Sub, Num n1, Num n2 -> Num (n1 - n2)
+  | Mult, Num n1, Num n2 -> Num (n1 * n2)
+  | Equal, Num n1, Num n2 -> if n1 = n2 then True else False
+  | Greater, Num n1, Num n2 -> if n1 > n2 then True else False
+  | Less, Num n1, Num n2 -> if n1 < n2 then True else False
+  | GreaterEq, Num n1, Num n2 -> if n1 >= n2 then True else False
+  | LessEq, Num n1, Num n2 -> if n1 <= n2 then True else False
+  | _ -> raise (L1TypeError "Operador binário aplicado a tipos não inteiros")
+
+let rec evaluate (e : expression) =
+  match e with
+  | Num _ -> e
+  | Var _x -> raise (L1TypeError "Variável não declarada")
+  | True -> e
+  | False -> e
+  | BiOperator (operator, e1, e2) ->
+      compute operator (evaluate e1) (evaluate e2)
+  | Pair (e1, e2) -> Pair (evaluate e1, evaluate e2)
+  | First e1 -> (
+      match evaluate e1 with
+      | Pair (e1, _) -> e1
+      | _ -> raise (L1TypeError "First aplicado a expressão não par"))
+  | Second e1 -> (
+      match evaluate e1 with
+      | Pair (_, e2) -> e2
+      | _ -> raise (L1TypeError "Second aplicado a expressão não par"))
+  | If (e1, e2, e3) -> (
+      match evaluate e1 with
+      | True -> evaluate e2
+      | False -> evaluate e3
+      | _ -> raise (L1TypeError "If aplicado a expressão não booleana"))
+  | Func _ -> e
+  | App (e1, e2) -> (
+      match evaluate e1 with
+      | Func (x, _, e) -> evaluate (replace (evaluate e2) x e)
+      | _ -> raise (L1TypeError "Aplicação de função a expressão não função"))
+  | Let (x, t, e1, e2) -> evaluate (App (Func (x, t, e2), e1))
+  | LetRec
+      (f, (L1Fn (t1, _t2) as type_func), (Func (x, tx, e1) as type_body), e2)
+    when t1 = tx ->
+      let alpha = Func (x, t1, LetRec (f, type_func, type_body, e1)) in
+      evaluate (replace alpha f e2)
+  | _ -> raise (L1TypeError "Expressão não implementada. Erro no parser.")
+
+(** Interpretador para L1 *)
+let rec is_value (e : expression) : bool =
+  match e with
+  | Num _ -> true
+  | True -> true
+  | False -> true
+  | Pair (e1, e2) -> is_value e1 && is_value e2
+  | Func _ -> true
+  | _ -> false
+
+let rec value_to_string (e : expression) : string =
+  match e with
+  | Num n -> string_of_int n
+  | True -> "true"
+  | False -> "false"
+  | Pair (e1, e2) -> "(" ^ value_to_string e1 ^ ", " ^ value_to_string e2 ^ ")"
+  | Func _ -> "<fun>"
+  | _ -> raise (L1TypeError "Expressão não implementada. Erro no parser.")
+
+let rec type_to_string (t : l1_type) : string =
+  match t with
+  | L1Int -> "int"
+  | L1Bool -> "bool"
+  | L1Fn (t1, t2) -> type_to_string t1 ^ " -> " ^ type_to_string t2
+  | L1Pair (t1, t2) -> "(" ^ type_to_string t1 ^ " * " ^ type_to_string t2 ^ ")"
+
+let interpreter (e : expression) : unit =
+  try
+    let t = l1_type_infer empty_env e in
+    let v = evaluate e in
+    print_string (value_to_string v ^ " : " ^ type_to_string t ^ "\n")
+  with L1TypeError s -> print_string ("Erro de tipo: " ^ s ^ "\n")
+
 (* Testes *)
 let upd1 = update empty_env "x" L1Int
 let upd2 = update upd1 "y" L1Bool
@@ -111,3 +212,8 @@ let testeif = If (First (Num 5), Num 10, Num 20)
 (* run: l1_type_infer [] testif => Erro proposital *)
 let testeop = BiOperator (Mult, True, Num 5)
 (* run: l1_type_infer [] testeop => Erro proposital *)
+
+(* x ^y *)
+let x_pow_y = BiOperator (Sub, Var "y", Num 1)
+let pow_app = App (App (Var "pow", Var "x"), x_pow_y)
+let x_pow = BiOperator (Mult, Var "x", pow_app)
