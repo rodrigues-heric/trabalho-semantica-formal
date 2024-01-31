@@ -16,67 +16,49 @@ exception BugParser
 exception BugTypeInfer
 exception TypeError of string
 
-(** Tipoes de L2
-
-  TyInt ->> tipo dos números inteiros
-
-  TyBool ->> tipo dos booleanos
-
-  TyFn ->> tipo das funções
-  
-  TyPair ->> tipo dos pares
+(** Tipos de L2
+  @typedef tipo - Tipos de L2
+  @prop {TyInt} TyInt - tipo dos números inteiros
+  @prop {TyBool} TyBool - tipo dos booleanos
+  @prop {TyFn} TyFn - tipo das funções
+  @prop {TyPair} TyPair - tipo dos pares
 *)
 type tipo = TyInt | TyBool | TyFn of tipo * tipo | TyPair of tipo * tipo
 
 type ident = string
 (** Identificadores de L2
-  
-ident ->> conjunto dos identificadores
+  @typedef ident - Identificadores de L2
+  @prop {ident} string - tipo dos identificadores
 *)
 
 (** Operadores de L2
-
-Sum ->> Soma 
-
-Sub ->> Subtração 
-
-Mult ->> Multiplicação
-
-Eq ->> Igualdade 
-
-Gt ->> Maior que
-
-Lt ->> Menor que
-
-Geq ->> Maior ou igual que 
-
-Leq ->> Menor ou igual que
+  @typedef op - Operadores de L2
+  @prop {Sum} Sum - soma
+  @prop {Sub} Sub - subtração
+  @prop {Mult} Mult - multiplicação
+  @prop {Eq} Eq - igualdade
+  @prop {Gt} Gt - maior que
+  @prop {Lt} Lt - menor que
+  @prop {Geq} Geq - maior ou igual que
+  @prop {Leq} Leq - menor ou igual que
 *)
 type op = Sum | Sub | Mult | Eq | Gt | Lt | Geq | Leq
 
 (** Expressões de L2
-e ::= 
-  | n 
-  | b 
-  | e1 op e2 
-  | if e1 then e2 else e3 
-  | e1 := e2 ->> e1 local de memória, e2 valor a ser armazenado
-  | !e1 ->> acessar o valor armazenado no local de memória e1
-  | new e1 ->> alocar um novo local de memória e inicializar com o valor de e1
-  | l 
-  | skip 
-  | e1 ; e2 
-  | while e1 do e2 
-  | fn x:T -> e 
-  | e1 e2 
-  | x 
-  | let x:T = e1 in e2 
-  | let rec f:T1 -> T2 = (fn y:T1 -> e1) in e2 
-onde 
-  n ->> conjunto dos números inteiros 
-  b ->> conjunto dos booleanos
-  op ->> conjunto dos operadores aritméticos e relacionais  
-  l ->> conjunto dos endereços de memória
+  @typedef expr - Expressões de L2
+  @prop {Num} Num - números inteiros
+  @prop {Var} Var - variáveis
+  @prop {True} True - verdadeiro
+  @prop {False} False - falso
+  @prop {Binop} Binop - operações binárias
+  @prop {Pair} Pair - pares
+  @prop {Fst} Fst - primeiro elemento do par
+  @prop {Snd} Snd - segundo elemento do par
+  @prop {If} If - condicional
+  @prop {Fn} Fn - função
+  @prop {App} App - aplicação de função
+  @prop {Let} Let - declaração de expressão
+  @prop {LetRec} LetRec - declaração de expressão recursiva
 *)
 type expr =
   | Num of int
@@ -93,22 +75,21 @@ type expr =
   | Let of ident * tipo * expr * expr
   | LetRec of ident * tipo * expr * expr
 
+(** Ambiente de L2 
+  @typedef tenv - Ambiente de L2
+  @prop {ident} ident - identificador
+  @prop {tipo} tipo - tipo
+*)
 type tenv = (ident * tipo) list
-(** Ambiente de L2 *)
-
+  
 (** Valores de L2 
-    
-VNum ->> valor dos números inteiros
-
-VTrue ->> valor verdadeiro
-
-VFalse ->> valor falso
-
-VPair ->> valor dos pares
-
-VClos ->> valor das funções (closure)
-
-VRClos ->> valor das funções recursivas (recursive closure)
+  @typedef valor - Valores de L2
+  @prop {VNum} VNum - valor dos números inteiros
+  @prop {VTrue} VTrue - valor verdadeiro
+  @prop {VFalse} VFalse - valor falso
+  @prop {VPair} VPair - valor dos pares
+  @prop {VClos} VClos - valor das funções (closure)
+  @prop {VRClos} VRClos - valor das funções recursivas (recursive closure)
 *)
 type valor =
   | VNum of int
@@ -117,18 +98,36 @@ type valor =
   | VPair of valor * valor
   | VClos of ident * expr * renv
   | VRClos of ident * ident * expr * renv
-
+(** Ambiente (em tempo de execução) de L2 
+  @typedef renv - Ambiente (em tempo de execução) de L2
+  @prop {ident} ident - identificador
+  @prop {valor} valor - valor    
+*)
 and renv = (ident * valor) list
 
-(* Funções auxiliares *)
+(** Realiza a busca de um valor no ambiente
+  @param {(tenv|renv)} env - ambiente de entrada
+  @param {ident} key - chave para busca
+  @returns {tipo option} tipo - tipo encontrado (ou None)
+*)
 let rec lookup env key =
   match env with
   | [] -> None
   | (index, value) :: tail ->
       if index = key then Some value else lookup tail key
 
+(** Atualiza o ambiente
+  @param {(tenv|renv)} env - ambiente de entrada
+  @param {ident} key - chave para formar o par
+  @param {valor} value - valor para formar o par
+  @returns {(ident * valor) list} env - ambiente atualizado    
+*)
 let rec update env key value = (key, value) :: env
 
+(** Converte um tipo para string
+  @param {tipo} t - tipo de entrada
+  @returns {string} string - tipo convertido para string
+*)
 let rec ttos (t : tipo) : string =
   match t with
   | TyInt -> "int"
@@ -136,6 +135,10 @@ let rec ttos (t : tipo) : string =
   | TyFn (t1, t2) -> "(" ^ ttos t1 ^ " -> " ^ ttos t2 ^ ")"
   | TyPair (t1, t2) -> "(" ^ ttos t1 ^ " * " ^ ttos t2 ^ ")"
 
+(** Converte um valor para string
+  @param {valor} v - valor de entrada
+  @returns {string} string - valor convertido para string
+*)
 let rec vtos (v : valor) : string =
   match v with
   | VNum n -> string_of_int n
@@ -145,7 +148,11 @@ let rec vtos (v : valor) : string =
   | VClos _ -> "<fun>"
   | VRClos _ -> "<fun>"
 
-(** Inferência de tipos para L2 *)
+(** Inferência de tipos para L2 
+  @param {tenv} tenv - ambiente de tipos
+  @param {expr} e - expressão de entrada
+  @returns {tipo} tipo - tipo inferido    
+*)
 let rec typeinfer (tenv : tenv) (e : expr) : tipo =
   match e with
   | Num _ -> TyInt
@@ -199,8 +206,13 @@ let rec typeinfer (tenv : tenv) (e : expr) : tipo =
       else raise (TypeError "Tipos diferentes para let rec")
   | _ -> raise BugParser
 
-(** Avaliador de L2 *)
-let compute (oper : op) (v1 : valor) (v2 : valor) =
+(** Computa o resultado de uma operação
+  @param {op} oper - operador
+  @param {valor} v1 - valor 1
+  @param {valor} v2 - valor 2
+  @returns {valor} valor - valor resultante da operação
+*)
+let compute (oper : op) (v1 : valor) (v2 : valor) : valor =
   match (oper, v1, v2) with
   | Sum, VNum n1, VNum n2 -> VNum (n1 + n2)
   | Sub, VNum n1, VNum n2 -> VNum (n1 - n2)
@@ -212,6 +224,11 @@ let compute (oper : op) (v1 : valor) (v2 : valor) =
   | Leq, VNum n1, VNum n2 -> if n1 <= n2 then VTrue else VFalse
   | _ -> raise BugTypeInfer
 
+(** Avaliador de L2 
+  @param {renv} renv - ambiente de execução
+  @param {expr} e - expressão de entrada
+  @returns {valor} valor - valor resultante da avaliação    
+*)
 let rec eval (renv : renv) (e : expr) : valor =
   match e with
   | Num n -> VNum n
@@ -257,7 +274,10 @@ let rec eval (renv : renv) (e : expr) : valor =
       eval renv' e2
   | _ -> raise BugTypeInfer
 
-(** Interpretador de L2 *)
+(** Interpretador de L2 
+  @param {expr} e - expressão de entrada
+  @returns {unit} - imprime o resultado da interpretação    
+*)
 let int_bse (e : expr) =
   try
     let t = typeinfer [] e in
