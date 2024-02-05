@@ -249,22 +249,23 @@ let rec typeinfer (tenv : tenv) (e : expr) : tipo =
           | Some (TyRef t) -> t
           | _ -> raise (TypeError "Dref espera uma referência"))
       | _ -> raise (TypeError "Dref espera uma variável"))
-  | Whl (e1, e2) -> 
-    let t1 = typeinfer tenv e1 in 
-    (
-      match t1 with 
-      | TyBool -> 
-        let t2 = typeinfer tenv e2 in 
-        if t2 = TyUnit then TyUnit
-        else raise (TypeError "While espera um tipo unit")
-      | _ -> raise (TypeError "While espera um booleano")
-    )
+  | Whl (e1, e2) -> (
+      let t1 = typeinfer tenv e1 in
+      match t1 with
+      | TyBool ->
+          let t2 = typeinfer tenv e2 in
+          if t2 = TyUnit then TyUnit
+          else raise (TypeError "While espera um tipo unit")
+      | _ -> raise (TypeError "While espera um booleano"))
   | _ -> raise BugParser
 
-let rec print_mem mem = 
-  match mem with 
-  | [||] -> print_string("Empty memory\n")
-  | _ -> mem |> Array.iteri (fun i v -> print_string("mem[" ^ string_of_int(i) ^ "] == " ^ vtos v ^ "\n"))
+let rec print_mem mem =
+  match mem with
+  | [||] -> print_string "Empty memory\n"
+  | _ ->
+      mem
+      |> Array.iteri (fun i v ->
+             print_string ("mem[" ^ string_of_int i ^ "] == " ^ vtos v ^ "\n"))
 
 (** Computa o resultado de uma operação
   @param {op} oper - operador
@@ -296,42 +297,33 @@ let rec eval (renv : renv) (e : expr) : valor =
   | Num n -> VNum n
   | True -> VTrue
   | False -> VFalse
-  | New e -> 
-      let v = eval renv e in 
-      let addr = !counter in 
-      let _count = incr counter in 
-      begin
-        let mem' = Array.append !mem [|v|] in
-        mem := mem';
-      end;
+  | New e ->
+      let v = eval renv e in
+      let addr = !counter in
+      let _count = incr counter in
+      (let mem' = Array.append !mem [| v |] in
+       mem := mem');
       VLoc addr
-  | Asg (e1, e2) -> 
+  | Asg (e1, e2) -> (
       let v1 = eval renv e1 in
       let v2 = eval renv e2 in
-      (match v1 with 
-        | VLoc addr -> 
+      match v1 with
+      | VLoc addr ->
           let _ = !mem.(addr) <- v2 in
           VUnit
-        | _ -> raise BugTypeInfer
-      )
-  | Seq (e1, e2) ->
+      | _ -> raise BugTypeInfer)
+  | Seq (e1, e2) -> (
       let v1 = eval renv e1 in
-      (match v1 with 
-        | VUnit -> eval renv e2
-        | _ -> raise BugTypeInfer
-      )
-  | Var x -> 
-    (
-      match lookup renv x with Some v -> v | None -> raise BugTypeInfer
-    )
-  | Dref e -> 
-    let vRef = eval renv e in
-    (match vRef with 
-      | VLoc addr -> 
-        let v = !mem.(addr) in
-        v
-      | _ -> raise BugTypeInfer
-    )
+      match v1 with VUnit -> eval renv e2 | _ -> raise BugTypeInfer)
+  | Var x -> (
+      match lookup renv x with Some v -> v | None -> raise BugTypeInfer)
+  | Dref e -> (
+      let vRef = eval renv e in
+      match vRef with
+      | VLoc addr ->
+          let v = !mem.(addr) in
+          v
+      | _ -> raise BugTypeInfer)
   | Binop (oper, e1, e2) ->
       let v1 = eval renv e1 in
       let v2 = eval renv e2 in
@@ -346,18 +338,17 @@ let rec eval (renv : renv) (e : expr) : valor =
       match eval renv e with VPair (_, v2) -> v2 | _ -> raise BugTypeInfer)
   | If (e1, e2, e3) -> (
       match eval renv e1 with
-      | VTrue -> eval renv e2 
-      | VFalse -> eval renv e3 
+      | VTrue -> eval renv e2
+      | VFalse -> eval renv e3
       | _ -> raise BugTypeInfer)
-  | Whl (e1, e2) -> 
-    let v1 = eval renv e1 in 
-    (match v1 with 
-      | VTrue -> 
-        let _ = eval renv e2 in 
-        eval renv (Whl(e1, e2))
+  | Whl (e1, e2) -> (
+      let v1 = eval renv e1 in
+      match v1 with
+      | VTrue ->
+          let _ = eval renv e2 in
+          eval renv (Whl (e1, e2))
       | VFalse -> VUnit
-      | _ -> raise BugTypeInfer
-    )
+      | _ -> raise BugTypeInfer)
   | Fn (x, _t, e1) -> VClos (x, e1, renv)
   | App (e1, e2) -> (
       let v1 = eval renv e1 in
@@ -393,12 +384,12 @@ let int_bse (e : expr) =
   | BugTypeInfer -> print_string "Erro presente no typeinfer"
   | BugParser -> print_string "Erro presente no parser"
 
-let int_bse_print (e: expr) = 
+let int_bse_print (e : expr) =
   try
-    let t = typeinfer [] e in 
-    let _t = print_string("Type: " ^ ttos t ^ "\n") in
-    let v = eval [] e in 
-    let _v = print_string (vtos v ^ " : " ^ ttos t ^ "\n") in 
+    let t = typeinfer [] e in
+    let _t = print_string ("Type: " ^ ttos t ^ "\n") in
+    let v = eval [] e in
+    let _v = print_string (vtos v ^ " : " ^ ttos t ^ "\n") in
     print_mem !mem
   with
   | TypeError msg -> print_string ("TypeError: " ^ msg)
@@ -408,9 +399,9 @@ let int_bse_print (e: expr) =
 (* ------------------------------------------- *)
 (* Testes *)
 
-(* Teste 1 
-  returns 7
-  mem[0] == 4
+(* Teste 1
+   returns 7
+   mem[0] == 4
 *)
 let teste1 =
   Let
@@ -425,48 +416,61 @@ let teste1 =
             ( Asg (Var "x", Binop (Sum, Dref (Var "x"), Num 1)),
               Binop (Sum, Var "y", Dref (Var "x")) ) ) )
 
-(* Teste 2 
-  returns 1 
-  mem[0] == 1   
+(* Teste 2
+   returns 1
+   mem[0] == 1
 *)
-let teste2 = Let("x", TyRef TyInt, New (Num 0),
-                 Let("y", TyRef TyInt, Var "x", 
-                     Seq(Asg(Var "x", Num 1), 
-                         Dref (Var "y"))))
+let teste2 =
+  Let
+    ( "x",
+      TyRef TyInt,
+      New (Num 0),
+      Let ("y", TyRef TyInt, Var "x", Seq (Asg (Var "x", Num 1), Dref (Var "y")))
+    )
 
 (* Teste 3
-  returns 3
-  mem[0] == 2   
+   returns 3
+   mem[0] == 2
 *)
-let counter1 = Let("counter", TyRef TyInt, New (Num 0),
-                   Let("next_val", TyFn(TyUnit, TyInt),
-                       Fn("w", TyUnit, 
-                          Seq(Asg(Var "counter",Binop(Sum, Dref(Var "counter"), Num 1)),
-                              Dref (Var "counter"))),
-                       Binop(Sum, App (Var "next_val", Skip), 
-                                  App (Var "next_val", Skip))))
-    
-(* Teste 4 
-  returns 120
-  mem[0] == 10
-  mem[2] == 120
+let counter1 =
+  Let
+    ( "counter",
+      TyRef TyInt,
+      New (Num 0),
+      Let
+        ( "next_val",
+          TyFn (TyUnit, TyInt),
+          Fn
+            ( "w",
+              TyUnit,
+              Seq
+                ( Asg (Var "counter", Binop (Sum, Dref (Var "counter"), Num 1)),
+                  Dref (Var "counter") ) ),
+          Binop (Sum, App (Var "next_val", Skip), App (Var "next_val", Skip)) )
+    )
+
+(* Teste 4
+   returns 120
+   mem[0] == 10
+   mem[2] == 120
 *)
-let whilefat = Whl(Binop(Gt, Dref (Var "z"), Num 0), 
-                   Seq( Asg(Var "y", Binop(Mult, Dref (Var "y"), Dref (Var "z"))), 
-                        Asg(Var "z", Binop(Sub,  Dref (Var "z"), Num 1)))                       
-                  ) 
-                               
-                             
-let bodyfat = Let("z", 
-                  TyRef TyInt, 
-                  New (Var "x"),
-                  Let("y", 
-                      TyRef TyInt, 
-                      New (Num 1), 
-                      Seq (whilefat, Dref (Var "y"))))
-    
-let impfat = Let("fat", 
-                 TyFn(TyInt,TyInt), 
-                 Fn("x", TyInt, bodyfat), 
-                 App(Var "fat", Num 5))
-       
+let whilefat =
+  Whl
+    ( Binop (Gt, Dref (Var "z"), Num 0),
+      Seq
+        ( Asg (Var "y", Binop (Mult, Dref (Var "y"), Dref (Var "z"))),
+          Asg (Var "z", Binop (Sub, Dref (Var "z"), Num 1)) ) )
+
+let bodyfat =
+  Let
+    ( "z",
+      TyRef TyInt,
+      New (Var "x"),
+      Let ("y", TyRef TyInt, New (Num 1), Seq (whilefat, Dref (Var "y"))) )
+
+let impfat =
+  Let
+    ( "fat",
+      TyFn (TyInt, TyInt),
+      Fn ("x", TyInt, bodyfat),
+      App (Var "fat", Num 5) )
