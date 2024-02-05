@@ -31,11 +31,11 @@ type tipo =
   | TyRef of tipo
   | TyUnit
 
-type ident = string
 (** Identificadores de L2
   @typedef ident - Identificadores de L2
   @prop {ident} string - tipo dos identificadores
 *)
+type ident = string
 
 (** Operadores de L2
   @typedef op - Operadores de L2
@@ -87,12 +87,12 @@ type expr =
   | LetRec of ident * tipo * expr * expr
   | Skip
 
-type tenv = (ident * tipo) list
 (** Ambiente de L2 
   @typedef tenv - Ambiente de L2
   @prop {ident} ident - identificador
   @prop {tipo} tipo - tipo
 *)
+type tenv = (ident * tipo) list
 
 (** Valores de L2 
   @typedef valor - Valores de L2
@@ -112,16 +112,17 @@ type valor =
   | VClos of ident * expr * renv
   | VRClos of ident * ident * expr * renv
   | VLoc of int
-      (** Ambiente (em tempo de execução) de L2 
+(** Ambiente (em tempo de execução) de L2 
   @typedef renv - Ambiente (em tempo de execução) de L2
   @prop {ident} ident - identificador
   @prop {valor} valor - valor    
 *)
-
 and renv = (ident * valor) list
+  
 
 (* Contador para endereço de memória *)
 let counter : int ref = ref 0
+(* Memória usando array e referência *)
 let mem = ref [||]
 
 (** Realiza a busca de um valor no ambiente
@@ -259,6 +260,7 @@ let rec typeinfer (tenv : tenv) (e : expr) : tipo =
       | _ -> raise (TypeError "While espera um booleano"))
   | _ -> raise BugParser
 
+(** Imprime a memória *)
 let rec print_mem mem =
   match mem with
   | [||] -> print_string "Empty memory\n"
@@ -384,6 +386,10 @@ let int_bse (e : expr) =
   | BugTypeInfer -> print_string "Erro presente no typeinfer"
   | BugParser -> print_string "Erro presente no parser"
 
+(** Interpretador de L2 com mensagens extras  
+  @param {expr} e - expressão de entrada
+  @returns {unit} - imprime o resultado da interpretação    
+*)
 let int_bse_print (e : expr) =
   try
     let t = typeinfer [] e in
